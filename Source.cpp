@@ -22,12 +22,15 @@ Descripcion:
 
 // DELCARACION DE METODOS Y FUNCIONES
 using namespace std;
+
 const int MAX = 6;
 const char NOEXITE = '-';
 const char CASILLA_INVALIDA = 'X';
 const char CASILLA_INICIO = 'O';
 const char CASILLA_FIN = '=';
 const char CASILLA_VACIA = ' ';
+const char CASILLA_VISITADA = 'v';
+
 typedef struct {
 	int f;
 	int c;
@@ -105,7 +108,8 @@ int main() {
 
 	// Guardo en la lista cerrada
 	//insertarEnListaCerrada(a.actual, a);
-	//algoritmo(a);
+
+	algoritmo(a);
 	/*
 
 		PriorityQueue <tCasilla> PQ;
@@ -171,11 +175,11 @@ bool posValida(int pos, int tam) {
 }
 void algoritmo(tAlgoritmo &a) {
 	cout << "<---- Actual: " << a.actual.f << a.actual.c << endl;
-
+	
 	vector<tCasilla> direcciones;
 
 	calculamosDirecciones(a, direcciones);
-
+	dibujarTablero(a.matriz);
 	recorremosDireccionesEInsertamosEnListaAbierta(direcciones, a);
 
 	// Me quedo con el minimo
@@ -214,7 +218,6 @@ void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direc
 {
 	for each (tCasilla casilla in direcciones)
 	{
-
 		if (casilla.simbolo != NOEXITE) {
 			double dInicio = calcularDistancia(a.actual, casilla);
 			double dDestino = calcularDistancia(casilla, a.fin);
@@ -224,8 +227,10 @@ void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direc
 			a.matriz[casilla.f][casilla.c].distanciaTotal = dInicio + dDestino;
 
 
-			if (!containsListaCerrada(a, a.matriz[casilla.f][casilla.c]))
+			if (!containsListaCerrada(a, a.matriz[casilla.f][casilla.c])) {
 				a.abierta.push(a.matriz[casilla.f][casilla.c]);
+				a.matriz[casilla.f][casilla.c].simbolo = CASILLA_VISITADA;
+			}
 		}
 	}
 }
@@ -278,8 +283,10 @@ tCasilla irSiguiente(tAlgoritmo &a, int f, int c) {
 	c1 = a.actual.c + c;
 
 	if (posValida(f1, MAX) && posValida(c1, MAX)) {
-		if (a.matriz[f1][c1].simbolo != CASILLA_INVALIDA)
+		if (a.matriz[f1][c1].simbolo != CASILLA_INVALIDA) {
 			siguienteC = a.matriz[f1][c1];
+			siguienteC.simbolo = CASILLA_VISITADA;
+		}
 		else
 			siguienteC.simbolo = NOEXITE;
 	}
@@ -345,6 +352,9 @@ void mostrarCasilla(const tCasilla &casilla) {
 }
 void dibujarTablero(tMatriz &matriz)
 {
+	Sleep(200);
+	system("cls");
+	
 	int N = MAX;
 	const char supIzq = char(218);
 	const char horizontal = char(196);
@@ -404,6 +414,7 @@ void dibujarTablero(tMatriz &matriz)
 		cout << setw(4) << i;
 	}
 	cout << endl;
+	
 }
 void setColor(tColor &color) {
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -423,6 +434,10 @@ void pintarCasilla(const tCasilla &casilla) {
 	else if (casilla.simbolo == CASILLA_INVALIDA)
 	{
 		color = light_red;
+	}
+	else if (casilla.simbolo == CASILLA_VISITADA)
+	{
+		color = light_yellow;
 	}
 	else {
 		color = white;
