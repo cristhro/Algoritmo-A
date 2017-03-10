@@ -1,3 +1,11 @@
+/*
+Nombre: practica 2
+Autores: Cristhian Rodriguez Gomez y Luis Mathioux Abad
+Fecha: 22/01/2017 19:45
+Fecha límite de entrega: 22 de enero de 2017.
+Descripcion:
+*/
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -7,6 +15,12 @@
 #include <functional>     // std::greate
 #include <vector>
 #include <math.h>
+#include <iomanip> 
+#include <windows.h> 
+#include <cstdlib> 
+#include <ctime> 
+
+// DELCARACION DE METODOS Y FUNCIONES
 using namespace std;
 const int MAX = 6;
 const char NOEXITE = '-';
@@ -37,11 +51,36 @@ typedef struct {
 	tCasilla fin;
 	tCasilla actual;
 }tAlgoritmo;
-
+typedef enum {   // screen colors 
+	black,                 // 0 
+	dark_blue,             // 1 
+	dark_green,            // 2 
+	dark_cyan,             // 3 
+	dark_red,              // 4 
+	dark_magenta,          // 5 
+	dark_yellow,           // 6 
+	light_gray,            // 7 
+	dark_gray,             // 8 
+	light_blue,            // 9 
+	light_green,           // 10 
+	light_cyan,            // 11 
+	light_red,             // 12 
+	light_magenta,         // 13 
+	light_yellow,          // 14 
+	white                  // 15 
+}tColor;
+/*
+	Metodos para la salida por pantalla
+*/
 void mostrarMatriz(const tMatriz &matriz);
 void mostrarCasillasDireccionesPosibles(std::vector<tCasilla> &direcciones, tAlgoritmo & a);
 void mostrarCasilla(const tCasilla &casilla);
-
+void dibujarTablero(tMatriz &matriz);
+void setColor(tColor &color);
+void pintarCasilla(const tCasilla & casilla);
+/*
+	Metodos para el algoritmo
+*/
 void inicializarAlgoritmo(tAlgoritmo &a);
 void inicializarMatriz(tMatriz &matriz);
 void modificarMatriz(tMatriz &m, tCasilla c);
@@ -62,11 +101,11 @@ int main() {
 	tAlgoritmo a;
 
 	inicializarAlgoritmo(a);
-	mostrarMatriz(a.matriz);
+	dibujarTablero(a.matriz);
 
 	// Guardo en la lista cerrada
-	insertarEnListaCerrada(a.actual, a);
-	algoritmo(a);
+	//insertarEnListaCerrada(a.actual, a);
+	//algoritmo(a);
 	/*
 
 		PriorityQueue <tCasilla> PQ;
@@ -150,7 +189,7 @@ void algoritmo(tAlgoritmo &a) {
 	a.actual = min;
 
 	//mostrarCasillasDireccionesPosibles(direcciones, a);
-	
+
 	// Si Hay elementos en la lista abierta o la Distancia a destino es Cero :Salimos
 	if (a.abierta.empty() || a.actual.distanciaADestino == 0) {
 		exit;
@@ -268,6 +307,7 @@ void inicializarMatriz(tMatriz &matriz) {
 	}
 }
 void mostrarMatriz(const tMatriz &matriz) {
+
 	for (int i = MAX - 1; i >= 1; i--)
 	{
 		for (int j = 1; j < MAX; j++)
@@ -302,4 +342,95 @@ void modificarCasilla(tCasilla &casilla, int f, int c, char simbolo) {
 void mostrarCasilla(const tCasilla &casilla) {
 	cout << casilla.f << casilla.c << " " << casilla.simbolo << endl;
 	cout << " DTotal:" << casilla.distanciaTotal << " destino:" << casilla.distanciaADestino << endl;
+}
+void dibujarTablero(tMatriz &matriz)
+{
+	int N = MAX;
+	const char supIzq = char(218);
+	const char horizontal = char(196);
+	const char supCruce = char(194);
+	const char supDer = char(191);
+	const char vertical = char(179);
+	const char verIzqCruce = char(195);
+	const char cruz = char(197);
+	const char verDerCruce = char(180);
+	const char infIzq = char(192);
+	const char infCruce = char(193);
+	const char infDer = char(217);
+	const char pieza = char(219);
+	tColor blanco;
+	blanco = white;
+
+
+	// PARTE SUPERIOR
+	setColor(blanco);
+	cout << setw(4) << supIzq;
+	for (int i = 1; i < N - 1; i++) {
+		cout << horizontal << horizontal << horizontal << supCruce;
+	}
+	cout << horizontal << horizontal << horizontal << supDer << endl;
+
+	// PARTE DEL MEDIO
+	for (int i = N -1; i >= 1; i--) {
+		// PIEZA
+		cout << setw(2) << i ;
+		cout << setw(2) << vertical;
+		for (int j = 1; j < N; j++) {
+			pintarCasilla(matriz[i][j]);
+			cout << vertical;   // pieza
+
+		}
+		cout << endl;
+
+		// VERTICAL CRUCE 
+		if (i > 1) {
+			cout << setw(4) << verIzqCruce;
+
+			for (int i = 1; i < N - 1; i++) {
+				cout << horizontal << horizontal << horizontal << cruz;
+			}
+			cout << horizontal << horizontal << horizontal << verDerCruce << endl;
+		}
+	}
+	// PARTE INFERIOR
+	cout << setw(4) << infIzq;
+	for (int i = 1; i < N - 1; i++) {
+		cout << horizontal << horizontal << horizontal << infCruce;
+	}
+	cout << horizontal << horizontal << horizontal << infDer << endl;
+
+	cout << char(32) << char(32);
+	for (int i = 1; i < N; i++) {
+		cout << setw(4) << i;
+	}
+	cout << endl;
+}
+void setColor(tColor &color) {
+	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(handle, color);
+}
+void pintarCasilla(const tCasilla &casilla) {
+	tColor color, blanco;
+
+	blanco = white;
+	if (casilla.simbolo == CASILLA_INICIO) {
+		color = light_green;
+	}
+	else if (casilla.simbolo == CASILLA_FIN)
+	{
+		color = light_blue;
+	}
+	else if (casilla.simbolo == CASILLA_INVALIDA)
+	{
+		color = light_red;
+	}
+	else {
+		color = white;
+	}
+	setColor(color);
+	// pintamos la ficha
+	cout << char(219) << char(219) << char(219);
+	//volvemos a pintar en negro
+	setColor(blanco);
+
 }
