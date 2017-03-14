@@ -30,6 +30,7 @@ const char CASILLA_INICIO = 'O';
 const char CASILLA_FIN = '=';
 const char CASILLA_VACIA = ' ';
 const char CASILLA_VISITADA = 'v';
+const char CASILLA_CERRADA = 'a';
 
 typedef struct {
 	int f;
@@ -47,6 +48,9 @@ typedef int tLista[MAX];
 typedef tCasilla tMatriz[MAX][MAX];
 
 typedef struct {
+	int nFilas;
+	int nColumnas;
+
 	tMatriz matriz;
 	PriorityQueue <tCasilla>  abierta;
 	TreeMap <int, tCasilla > cerrada;
@@ -54,6 +58,7 @@ typedef struct {
 	tCasilla fin;
 	tCasilla actual;
 }tAlgoritmo;
+
 typedef enum {   // screen colors 
 	black,                 // 0 
 	dark_blue,             // 1 
@@ -90,7 +95,7 @@ void modificarMatriz(tMatriz &m, tCasilla c);
 void modificarCasilla(tCasilla &casilla, int f, int c, char simbolo);
 bool posValida(int pos, int tam);
 tCasilla irSiguiente(tAlgoritmo &a, int f, int c);
-void algoritmo(tAlgoritmo &a);
+void ejecutarAlgoritmo(tAlgoritmo &a);
 void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direcciones, tAlgoritmo & a);
 void calculamosDirecciones(tAlgoritmo & a, std::vector<tCasilla> &direcciones);
 bool containsListaCerrada(tAlgoritmo & a, tCasilla &var);
@@ -99,31 +104,22 @@ void popListaAbierta(tAlgoritmo & a);
 void insertarEnListaCerrada(tCasilla &min, tAlgoritmo & a);
 double calcularDistancia(tCasilla &o, tCasilla &d);
 
+// Cargamos el trablero
+bool cargarAlgoritmo(tAlgoritmo & a);
+void cargarTablero(ifstream & fichero, tAlgoritmo & a);
 int main() {
 
 	tAlgoritmo a;
 
+	// Inicializamos los datos del algoritmo
 	inicializarAlgoritmo(a);
+
+	// Dibujamos el tablero
 	dibujarTablero(a.matriz);
+	
+	// Ejecutamos el algoritmo
+	ejecutarAlgoritmo(a);
 
-	// Guardo en la lista cerrada
-	//insertarEnListaCerrada(a.actual, a);
-
-	algoritmo(a);
-	/*
-
-		PriorityQueue <tCasilla> PQ;
-		PQ.push(c);
-		PQ.push(c1);
-		PQ.push(c2);
-
-		cout << PQ.size()<<endl;
-		for (int i = 0; i <= PQ.size(); i++)
-		{
-			cout << PQ.top().valor << endl;
-			PQ.pop();
-
-		}*/
 	system("PAUSE");
 	return 0;
 }
@@ -149,12 +145,16 @@ void inicializarAlgoritmo(tAlgoritmo &a) {
 	// Casillas de inicio 
 	modificarCasilla(c, 1, 1, CASILLA_INICIO);
 	modificarMatriz(a.matriz, c);
+	//a.abierta.push(c);
+	insertarEnListaCerrada(c, a);
+
 	a.actual = c;
 	a.inicio = c;
 
 	// Casilla fin
 	modificarCasilla(c, 2, 5, CASILLA_FIN);
 	modificarMatriz(a.matriz, c);
+
 	a.fin = c;
 
 }
@@ -173,13 +173,14 @@ double calcularDistancia(tCasilla &o, tCasilla &d) {
 bool posValida(int pos, int tam) {
 	return (pos >= 1 && pos < tam);
 }
-void algoritmo(tAlgoritmo &a) {
+void ejecutarAlgoritmo(tAlgoritmo &a) {
 	cout << "<---- Actual: " << a.actual.f << a.actual.c << endl;
 	
 	vector<tCasilla> direcciones;
 
 	calculamosDirecciones(a, direcciones);
-	dibujarTablero(a.matriz);
+	//dibujarTablero(a.matriz);
+
 	recorremosDireccionesEInsertamosEnListaAbierta(direcciones, a);
 
 	// Me quedo con el minimo
@@ -200,7 +201,7 @@ void algoritmo(tAlgoritmo &a) {
 	}
 	else {
 		popListaAbierta(a);
-		algoritmo(a);
+		ejecutarAlgoritmo(a);
 	}
 
 
@@ -218,7 +219,8 @@ void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direc
 {
 	for each (tCasilla casilla in direcciones)
 	{
-		if (casilla.simbolo != NOEXITE) {
+		if (casilla.simbolo != NOEXITE ) {
+			
 			double dInicio = calcularDistancia(a.actual, casilla);
 			double dDestino = calcularDistancia(casilla, a.fin);
 
@@ -228,8 +230,15 @@ void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direc
 
 
 			if (!containsListaCerrada(a, a.matriz[casilla.f][casilla.c])) {
+				
 				a.abierta.push(a.matriz[casilla.f][casilla.c]);
-				a.matriz[casilla.f][casilla.c].simbolo = CASILLA_VISITADA;
+
+				if (a.matriz[casilla.f][casilla.c].simbolo != CASILLA_FIN)
+					a.matriz[casilla.f][casilla.c].simbolo = CASILLA_VISITADA;
+
+				// Actualizamos el tablero
+				dibujarTablero(a.matriz);
+				
 			}
 		}
 	}
@@ -271,9 +280,14 @@ void popListaAbierta(tAlgoritmo & a)
 	a.abierta.pop();
 }
 void insertarEnListaCerrada(tCasilla &min, tAlgoritmo & a)
-{
+{	
 	int clave = min.f * 10 + min.c;
 	a.cerrada.insert(clave, min);
+
+	if (min.simbolo != CASILLA_INICIO)
+		min.simbolo = CASILLA_CERRADA;
+
+	modificarMatriz(a.matriz, min);
 }
 tCasilla irSiguiente(tAlgoritmo &a, int f, int c) {
 	tCasilla siguienteC;
@@ -348,11 +362,11 @@ void modificarCasilla(tCasilla &casilla, int f, int c, char simbolo) {
 }
 void mostrarCasilla(const tCasilla &casilla) {
 	cout << casilla.f << casilla.c << " " << casilla.simbolo << endl;
-	cout << " DTotal:" << casilla.distanciaTotal << " destino:" << casilla.distanciaADestino << endl;
+	//cout << " DTotal:" << casilla.distanciaTotal << " destino:" << casilla.distanciaADestino << endl;
 }
 void dibujarTablero(tMatriz &matriz)
 {
-	Sleep(200);
+	Sleep(400);
 	system("cls");
 	
 	int N = MAX;
@@ -382,13 +396,13 @@ void dibujarTablero(tMatriz &matriz)
 
 	// PARTE DEL MEDIO
 	for (int i = N -1; i >= 1; i--) {
-		// PIEZA
+		
 		cout << setw(2) << i ;
 		cout << setw(2) << vertical;
 		for (int j = 1; j < N; j++) {
+			// CASILLA
 			pintarCasilla(matriz[i][j]);
 			cout << vertical;   // pieza
-
 		}
 		cout << endl;
 
@@ -439,6 +453,10 @@ void pintarCasilla(const tCasilla &casilla) {
 	{
 		color = light_yellow;
 	}
+	else if (casilla.simbolo == CASILLA_CERRADA)
+	{
+		color = black;
+	}
 	else {
 		color = white;
 	}
@@ -448,4 +466,58 @@ void pintarCasilla(const tCasilla &casilla) {
 	//volvemos a pintar en negro
 	setColor(blanco);
 
+}
+bool cargarAlgoritmo(tAlgoritmo & a) {
+	ifstream fichero_entrada;
+	string nomFichEntrada = "levels.txt";
+	int nivel;
+	bool exito = false;
+
+	// ### pedirString(nomFichEntrada, "Introduce el nombre del fichero (ej: nombre.txt):");
+
+	// Abrimos el fichero
+	fichero_entrada.open(nomFichEntrada);
+
+	if (!fichero_entrada.is_open()) {
+		cout << "ERROR: no se pudo abrir el archivo : " << nomFichEntrada << endl;
+	}
+	else {
+
+		// Cargamos el tablero
+		cargarTablero(fichero_entrada, a);
+
+		// Cerramos el fichero
+		fichero_entrada.close();
+	}
+
+	return exito;
+}
+void cargarTablero(ifstream & fichero, tAlgoritmo & a)
+{
+	tCasilla casilla;
+	string linea;
+	int f = 0, c = 0;
+	int colMax = 0;
+
+	getline(fichero, linea);// primera linea del tablero
+
+	while (linea.length() != 0) {
+
+		for (c = 0; c < linea.length(); c++)
+		{
+			// Guardamos la casilla
+			a.matriz[f][c].simbolo = linea[c];
+
+			// Si es mayor que la maxima columna, lo guardamos
+			if (c >= colMax)
+				colMax = c;
+
+		}
+		f++;
+		getline(fichero, linea); //siguiente linea
+	}
+
+	// Guardamos la fila y columna
+	a.nFilas = f;
+	a.nColumnas = colMax + 1;
 }
