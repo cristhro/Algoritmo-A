@@ -1,9 +1,10 @@
-/*
-Nombre: practica 2
-Autores: Cristhian Rodriguez Gomez y Luis Mathioux Abad
+﻿/*
+Asignatura: Ingenieria del conocimiento
+Nombre: practica 1
+Autores: Cristhian Rodriguez Gomez 
 Fecha: 22/01/2017 19:45
-Fecha l�mite de entrega: 22 de enero de 2017.
-Descripcion:
+Fecha límite de entrega: 22 de enero de 2017.
+
 */
 
 #include <iostream>
@@ -50,7 +51,6 @@ typedef tCasilla tMatriz[MAX][MAX];
 typedef struct {
 	int nFilas;
 	int nColumnas;
-
 	tMatriz matriz;
 	PriorityQueue <tCasilla>  abierta;
 	TreeMap <int, tCasilla > cerrada;
@@ -78,6 +78,14 @@ typedef enum {   // screen colors
 	white                  // 15 
 }tColor;
 /*
+	Metodos para la entrada 
+*/
+void pedirEntero(int &entero, string msg);
+void insertarStart(tAlgoritmo & a);
+void insertarEnd(tAlgoritmo & a);
+void insertarObstaculo(tAlgoritmo & a);
+void quitarObstaculo(tAlgoritmo & a);
+/*
 	Metodos para la salida por pantalla
 */
 void mostrarMatriz(const tAlgoritmo &a);
@@ -86,6 +94,7 @@ void mostrarCasilla(const tCasilla &casilla);
 void dibujarTablero(const tAlgoritmo &a);
 void setColor(tColor &color);
 void pintarCasilla(const tCasilla & casilla);
+void mostrarDatosAlgoritmo(tAlgoritmo & a);
 /*
 	Metodos para el algoritmo
 */
@@ -103,34 +112,39 @@ tCasilla getMinListaAbierta(tAlgoritmo & a);
 void popListaAbierta(tAlgoritmo & a);
 void insertarEnListaCerrada(tCasilla &min, tAlgoritmo & a);
 double calcularDistancia(tCasilla &o, tCasilla &d);
+/**
+* Métodos del menú:
+*/
+int menu();
+void mostrarMenu();
+int leerOpcion();
+bool esOpcionValida(int opc);
+void ejecutarOpc(int opc, tAlgoritmo & a);
 
 // Cargamos el trablero
-bool cargarAlgoritmo(tAlgoritmo & a);
-void cargarTablero(ifstream & fichero, tAlgoritmo & a);
+//bool cargarAlgoritmo(tAlgoritmo & a);
+//void cargarTablero(ifstream & fichero, tAlgoritmo & a);
 int main() {
 
+	int opc;				// opcion elegida por el usuario
 	tAlgoritmo a;
-	
 
-
-	// Inicializamos los datos del algoritmo
-	//inicializarAlgoritmo(a);
-	cargarAlgoritmo(a);
-
-	// Dibujamos el tablero
+	inicializarAlgoritmo(a);
 	dibujarTablero(a);
-	
-	// Ejecutamos el algoritmo
-	// ejecutarAlgoritmo(a);
+	do {
+		mostrarDatosAlgoritmo(a);
+		opc = menu();
+		ejecutarOpc(opc, a);
+		dibujarTablero(a);
+	} while (opc != 0);
 
-	system("PAUSE");
 	return 0;
 }
 
 void inicializarAlgoritmo(tAlgoritmo &a) {
 	tCasilla c;
 
-	// Inicializar tama�o de filas y columnas
+	// Inicializar tamaño de filas y columnas
 	a.nColumnas = MAX;
 	a.nFilas = MAX;
 
@@ -182,9 +196,10 @@ bool posValida(int pos, int tam) {
 	return (pos >= 1 && pos < tam);
 }
 void ejecutarAlgoritmo(tAlgoritmo &a) {
-	cout << "<---- Actual: " << a.actual.f << a.actual.c << endl;
 	
 	vector<tCasilla> direcciones;
+	// Mostramos el tablero
+	dibujarTablero(a);
 
 	calculamosDirecciones(a, direcciones);
 	//dibujarTablero(a.matriz);
@@ -193,7 +208,7 @@ void ejecutarAlgoritmo(tAlgoritmo &a) {
 
 	// Me quedo con el minimo
 	tCasilla min = getMinListaAbierta(a);
-	mostrarCasilla(min);
+	// ### mostrarCasilla(min);
 
 	// Guardo en la lista cerrada
 	insertarEnListaCerrada(min, a);
@@ -245,7 +260,7 @@ void recorremosDireccionesEInsertamosEnListaAbierta(std::vector<tCasilla> &direc
 					a.matriz[casilla.f][casilla.c].simbolo = CASILLA_VISITADA;
 
 				// Actualizamos el tablero
-				dibujarTablero(a);
+				// dibujarTablero(a);
 				
 			}
 		}
@@ -431,9 +446,9 @@ void dibujarTablero(const tAlgoritmo &a)
 	}
 	cout << horizontal  << horizontal << infDer << endl;
 
-	cout << char(32) << char(32);
+	cout << "  ";
 	for (int i = 1; i < a.nColumnas; i++) {
-		cout << setw(4) << i;
+		cout << setw(3) << i;
 	}
 	cout << endl;
 	
@@ -471,74 +486,289 @@ void pintarCasilla(const tCasilla &casilla) {
 	setColor(color);
 	// pintamos la ficha
 	cout << char(219) << char(219);
+
+	
 	//volvemos a pintar en negro
 	setColor(blanco);
 
 }
-bool cargarAlgoritmo(tAlgoritmo & a) {
-	ifstream fichero_entrada;
-	string nomFichEntrada = "mapa.txt";
-	int nivel;
+int menu() {
+	int opc;
+
+	mostrarMenu();
+	opc = leerOpcion();
+
+	return opc;
+}
+/**
+* Procedimiento que muestra el menu
+*/
+void mostrarMenu() {
+	tCasilla inicio, fin, obs;
+	inicio.simbolo = CASILLA_INICIO;
+	fin.simbolo = CASILLA_FIN;
+	obs.simbolo = CASILLA_INVALIDA;
+
+	cout << "		*********** " << endl;
+	cout << "		*  MENU   * " << endl;
+	cout << "		*********** " << endl;
+	cout << "1.- Modificar Start " ;
+	pintarCasilla(inicio);
+	cout << endl;
+	cout << "2.- Modificar End " ;
+	pintarCasilla(fin);
+	cout << endl;
+	cout << "3.- Añadir Obstaculo " ;
+	pintarCasilla(obs);
+	cout << endl;
+	cout << "4.- Quitar Obstaculo ";
+	pintarCasilla(obs);
+	cout << endl;
+	cout << "5.- Ejecutar algoritmo" << endl;
+	cout << "0.- Salir" << endl;
+	cout << "		Opcion: ";
+
+}
+/**
+* Funcion que pide y valida al usuario una opcion
+*
+* @return opc: int
+*/
+int leerOpcion() {
+	int opc;
+	cin >> opc;
+
+	if (cin.fail() || !esOpcionValida(opc)) { // Comprobaci�n de error de lectura
+		opc = -1;
+		cin.clear();
+	};
+	cin.sync(); // Limpiar todo lo que dejo de m�s el usuario
+
+	return opc;
+}
+/**
+* Funcion booleana que comprueba si una opcion es valida
+*
+* @param  opc: int (que representa una opcion)
+* @return true: si es 'opcion >= 0 y opcion <= 2'
+*/
+bool esOpcionValida(int opc) {
+	return (opc >= 0) && (opc <= 5);
+}
+/**
+*
+* @param opc: int
+* @param juego: tJuego
+*/
+void ejecutarOpc(int opc, tAlgoritmo & a) {
 	bool exito = false;
-
-	// ### pedirString(nomFichEntrada, "Introduce el nombre del fichero (ej: nombre.txt):");
-
-	// Abrimos el fichero
-	fichero_entrada.open(nomFichEntrada);
-
-	if (!fichero_entrada.is_open()) {
-		cout << "ERROR: no se pudo abrir el archivo : " << nomFichEntrada << endl;
-	}
-	else {
-
-		// Cargamos el tablero
 	
-		cargarTablero(fichero_entrada, a);
+//	limpiarConsola();
+	switch (opc) {
+		case 1:
+			// Insertar Comienzo
+			cout << "OPCION 1" << endl;
+			insertarStart(a);
+			break;
+		case 2:
+			// Insertar Fin
+			cout << "OPCION 2" << endl;
+			insertarEnd(a);
+			break;
+		case 3:
+			// Insertar Obstaculos
+			cout << "OPCION 3" << endl;
+			insertarObstaculo(a);
+			break;
+		case 4:
+			// Insertar Obstaculos
+			cout << "OPCION 4" << endl;
+			quitarObstaculo(a);
+			break;
+		case 5:
+			// Ejecutar algoritmo
+			cout << "OPCION 5" << endl;
+			ejecutarAlgoritmo(a);
+			break;
 
-		// Cerramos el fichero
-		fichero_entrada.close();
+		default:
+			break;
 	}
 
-	return exito;
+
 }
-void cargarTablero(ifstream & fichero, tAlgoritmo & a)
+void pedirEntero(int &entero, string msg)
 {
-	tCasilla casilla;
-	string linea;
-	int f = 0, c = 0;
-	int colMax = 0;
-
-	getline(fichero, linea);// primera linea del tablero
-
-	while (linea.length() != 0) {
-
-		for (c = 0; c < linea.length(); c++)
-		{
-			tCasilla casilla;
-			
-			// Guardamos la casilla
-		
-			a.matriz[f][c].simbolo = linea[c];
-			a.matriz[f][c].f = f;
-			a.matriz[f][c].c = c;
-
-			pintarCasilla(a.matriz[f][c]);
-			// Si es la casilla de inicio,
-			if (linea[c] == CASILLA_INICIO){
-				a.inicio = a.matriz[f][c];
-			}
-				
-			// Si es mayor que la maxima columna, lo guardamos
-			if (c >= colMax)
-				colMax = c;
-
-		}
-		cout << endl;
-		f++;
-		getline(fichero, linea); //siguiente linea
+	cout << msg;
+	cin >> entero;
+	while (cin.fail()) {
+		cin.clear();
+		cin.sync();
+		cout << "\tERROR: El numero introducido NO es numérico" << endl;
+		cout << msg;
+		cin >> entero;
 	}
-
-	// Guardamos la fila y columna
-	a.nFilas = f;
-	a.nColumnas = colMax + 1;
 }
+void insertarStart(tAlgoritmo & a){
+	int f, c;
+	tCasilla tmp, vacia;
+
+	pedirEntero(f, "Introduce una fila entre [1 - 5] : ");
+	pedirEntero(c, "Introduce una columna entre [1 - 5] : ");
+
+	tmp = a.inicio;
+	vacia = a.inicio;
+
+	if (posValida(f, a.nFilas) && posValida(c, a.nColumnas)){
+		// Ponemos una casilla vacia en la anterior
+		vacia.simbolo = CASILLA_VACIA;
+		modificarMatriz(a.matriz, vacia);
+		
+		// Modificamos la casilla Inicio
+		tmp.c = c;
+		tmp.f = f;
+		tmp.simbolo = CASILLA_INICIO;
+
+		a.inicio = tmp;
+		a.actual = tmp;
+		modificarMatriz(a.matriz, tmp);
+	}
+}
+void insertarEnd(tAlgoritmo & a){
+	int f, c;
+	tCasilla tmp, vacia;
+
+	pedirEntero(f, "Introduce una fila entre [1 - 5] : ");
+	pedirEntero(c, "Introduce una columna entre [1 - 5] : ");
+
+	tmp = a.fin;
+	vacia = a.fin;
+
+	if (posValida(f, a.nFilas) && posValida(c, a.nColumnas)){
+		// Ponemos una casilla vacia en la anterior
+		vacia.simbolo = CASILLA_VACIA;
+		modificarMatriz(a.matriz, vacia);
+
+		// Modificamos la casilla Inicio
+		tmp.c = c;
+		tmp.f = f;
+		tmp.simbolo = CASILLA_FIN;
+
+		a.fin = tmp;
+		modificarMatriz(a.matriz, tmp);
+	}
+}
+void insertarObstaculo(tAlgoritmo & a){
+	int f, c;
+	tCasilla tmp;
+
+	pedirEntero(f, "Introduce una fila entre [1 - 5] : ");
+	pedirEntero(c, "Introduce una columna entre [1 - 5] : ");
+
+	if (posValida(f, a.nFilas) && posValida(c, a.nColumnas)){
+
+		// Modificamos la casilla 
+		tmp.c = c;
+		tmp.f = f;
+		tmp.simbolo = CASILLA_INVALIDA;
+
+		modificarMatriz(a.matriz, tmp);
+
+	}
+}
+void quitarObstaculo(tAlgoritmo & a){
+	int f, c;
+	tCasilla tmp;
+
+	pedirEntero(f, "Introduce una fila entre [1 - 5] : ");
+	pedirEntero(c, "Introduce una columna entre [1 - 5] : ");
+
+	if (posValida(f, a.nFilas) && posValida(c, a.nColumnas)){
+
+		// Modificamos la casilla 
+		tmp.c = c;
+		tmp.f = f;
+		tmp.simbolo = CASILLA_VACIA;
+
+		modificarMatriz(a.matriz, tmp);
+
+	}
+}
+void mostrarDatosAlgoritmo(tAlgoritmo & a){
+
+	
+	cout << "INICIO: ";
+	mostrarCasilla(a.inicio);
+	cout << "FIN: ";
+	mostrarCasilla(a.fin);
+	cout << "ACTUAL: ";
+	mostrarCasilla(a.actual);
+
+}
+//bool cargarAlgoritmo(tAlgoritmo & a) {
+//	ifstream fichero_entrada;
+//	string nomFichEntrada = "mapa.txt";
+//	int nivel;
+//	bool exito = false;
+//
+//	// ### pedirString(nomFichEntrada, "Introduce el nombre del fichero (ej: nombre.txt):");
+//
+//	// Abrimos el fichero
+//	fichero_entrada.open(nomFichEntrada);
+//
+//	if (!fichero_entrada.is_open()) {
+//		cout << "ERROR: no se pudo abrir el archivo : " << nomFichEntrada << endl;
+//	}
+//	else {
+//
+//		// Cargamos el tablero
+//	
+//		cargarTablero(fichero_entrada, a);
+//
+//		// Cerramos el fichero
+//		fichero_entrada.close();
+//	}
+//
+//	return exito;
+//}
+//void cargarTablero(ifstream & fichero, tAlgoritmo & a)
+//{
+//	tCasilla casilla;
+//	string linea;
+//	int f = 0, c = 0;
+//	int colMax = 0;
+//
+//	getline(fichero, linea);// primera linea del tablero
+//
+//	while (linea.length() != 0) {
+//
+//		for (c = 0; c < linea.length(); c++)
+//		{
+//			tCasilla casilla;
+//			
+//			// Guardamos la casilla
+//		
+//			a.matriz[f][c].simbolo = linea[c];
+//			a.matriz[f][c].f = f;
+//			a.matriz[f][c].c = c;
+//
+//			pintarCasilla(a.matriz[f][c]);
+//			// Si es la casilla de inicio,
+//			if (linea[c] == CASILLA_INICIO){
+//				a.inicio = a.matriz[f][c];
+//			}
+//				
+//			// Si es mayor que la maxima columna, lo guardamos
+//			if (c >= colMax)
+//				colMax = c;
+//
+//		}
+//		cout << endl;
+//		f++;
+//		getline(fichero, linea); //siguiente linea
+//	}
+//
+//	// Guardamos la fila y columna
+//	a.nFilas = f;
+//	a.nColumnas = colMax + 1;
+//}
